@@ -94,7 +94,7 @@ class MainWidget(RelativeLayout):
         self.sound_game = SoundLoader.load("audios/Gamesong.mp3")
         self.sound_reset = SoundLoader.load("audios/Reset.mp3")
         self.sound_start = SoundLoader.load("audios/Startsound.wav")
-        self.sound_over = SoundLoader.load("audios/Oversound")
+        self.sound_over = SoundLoader.load("audios/Oversound.wav")
         self.sound_restart = SoundLoader.load("audios/Restart")
         
         self.sound_game.volume = 1
@@ -318,6 +318,7 @@ class MainWidget(RelativeLayout):
             self.sound_game.stop()
             self.sound_begin.stop()
             self.sound_reset.stop()
+            self.sound_over.play()
             print("Game over")
         
     def on_menu_press(self):

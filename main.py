@@ -1,36 +1,43 @@
 import re
 from kivy.config import Config
-Config.set('graphics', 'width', '980')
-Config.set('graphics', 'height', '600')
+Config.set('graphics', 'width', '1000')
+Config.set('graphics', 'height', '693')
 import random
 
 from kivy.app import App
 from kivy.uix.widget import Widget
-from kivy.properties import NumericProperty
+from kivy.uix.relativelayout import RelativeLayout
+from kivy.properties import NumericProperty, ObjectProperty, StringProperty
 from kivy.graphics.context_instructions import Color
 from kivy.graphics.vertex_instructions import Line, Quad, Triangle
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy import platform
+from kivy.lang import Builder
+from kivy.core.audio import SoundLoader 
 
 
+Builder.load_file("menu.kv")
 
-class MainWidget(Widget):
+
+class MainWidget(RelativeLayout):
     from tranforms import tranform, tranform_2D, tranform_perspective
     from user_action import keyboard_closed, on_keyboard_down, on_keyboard_up, on_touch_up, on_touch_down
+    
+    menu_widget = ObjectProperty()
     perspective_point_x = NumericProperty(0)
     perspective_point_y = NumericProperty(0)
     line = None
     
-    V_NB_LINES = 10
-    V_LINES_SPACEING = .25
+    V_NB_LINES = 8
+    V_LINES_SPACEING = .3
     vetical_lines = []
     
     H_NB_LINES = 10
     H_LINES_SPACEING = .1
     horizontal_lines = []
     
-    SPEED = .8
+    SPEED = 0.5
     
     current_offset_y = 0
     current_y_loop = 0
@@ -49,10 +56,24 @@ class MainWidget(Widget):
     ship = None
     ship_coordinates = [(0, 0), (0, 0), (0, 0)]
     
+    state_game_over = False
+    state_game_has_started = False
+
+    menu_title = StringProperty('G A L A X Y')
+    menu_button_title = StringProperty("START")
+    score_txt = StringProperty()
+    
+    sound_begin = None
+    sound_game = None
+    sound_reset = None
+    sound_start = None
+    sound_over = None
+    sound_restart = None
     
     def __init__(self,**kwargs):
         super(MainWidget, self).__init__(**kwargs)
         # print("INT W: "+ str(self.width) + "H: " + str(self.height))
+        self.init_audio()
         self.init_vertical_lines()
         self.init_horizontal_lines()
         self.init_tiles()
@@ -65,7 +86,34 @@ class MainWidget(Widget):
             self._keyboard.bind(on_key_up=self.on_keyboard_up)  
                   
         Clock.schedule_interval(self.update, 1.0 / 60.0)
+        self.sound_begin.play()
+        
 
+    def init_audio(self):
+        self.sound_begin = SoundLoader.load("audios/Begining.mp3")
+        self.sound_game = SoundLoader.load("audios/Gamesong.mp3")
+        self.sound_reset = SoundLoader.load("audios/Reset.mp3")
+        self.sound_start = SoundLoader.load("audios/Startsound.wav")
+        self.sound_over = SoundLoader.load("audios/Oversound")
+        self.sound_restart = SoundLoader.load("audios/Restart")
+        
+        self.sound_game.volume = 1
+        self.sound_begin.volume = .8
+        self.sound_reset.volume = .8
+    
+    def reset_game(self):
+        self.current_offset_y = 0
+        self.current_y_loop = 0
+        self.current_speed_x = 0
+        self.current_offset_x = 0        
+        self.tiles_coordinates = []
+        self.score_txt  = "SCORE: "+ str(self.current_y_loop)
+        self.pre_fill_tiles_coordinates()
+        self.generate_tiles_coorddinates()
+        
+        self.state_game_over = False
+        self.sound_reset.stop()
+    
     def is_desktop(self):
         if platform in ('linux', 'win', 'macosx'):
             print(platform)
@@ -244,21 +292,58 @@ class MainWidget(Widget):
         self.update_horizontal_lines()
         self.update_tiles()
         self.update_ship()
-        speed_y = self.SPEED * self.height / 100
-        self.current_offset_y += speed_y*time_factor
-        spacing_y = self.H_LINES_SPACEING*self.height
-        if self.current_offset_y >= spacing_y:
-            self.current_offset_y -= spacing_y
-            self.current_y_loop += 1
-            self.generate_tiles_coorddinates()
-            print("loop: "+ str(self.current_y_loop))
+        if not self.state_game_over and self.state_game_has_started:
+            speed_y = self.SPEED * self.height / 100
+            self.current_offset_y += speed_y*time_factor
+            spacing_y = self.H_LINES_SPACEING*self.height
+            while self.current_offset_y >= spacing_y:
+                self.current_offset_y -= spacing_y
+                self.current_y_loop += 1
+                self.score_txt  = "SCORE: "+ str(self.current_y_loop)
+                if self.current_y_loop%50 == 0:
+                    self.SPEED += .1
+                print (self.SPEED)
+                self.generate_tiles_coorddinates()
+                print("loop: "+ str(self.current_y_loop))
             
-        speed_x = self.current_speed_x*self.width / 100 
-        self.current_offset_x += speed_x*time_factor
+            speed_x = self.current_speed_x*self.width / 100 
+            self.current_offset_x += speed_x*time_factor
         
         
-        if not self.check_ship_collosion():
+        if not self.check_ship_collosion() and not self.state_game_over:
+            self.state_game_over = True
+            self.menu_widget.opacity = 1
+            self.menu_title = "G A M E  O V E R"
+            self.menu_button_title = "RESTART"
+            self.sound_game.stop()
+            self.sound_begin.stop()
+            self.sound_reset.stop()
             print("Game over")
+        
+    def on_menu_press(self):
+        self.reset_game()
+        self.state_game_has_started = True
+        self.menu_widget.opacity = 0
+        self.sound_game.play()
+        if self.state_game_has_started:
+            self.sound_start.play()
+        else:
+            self.sound_restart.play()
+        self.sound_begin.stop()
+        self.sound_reset.stop()
+    
+    def song1(self):
+        self.sound_game.play()
+        self.sound_begin.stop()
+        self.sound_reset.stop()
+    def song2(self):
+        self.sound_begin.play()
+        self.sound_game.stop()
+        self.sound_reset.stop()
+    def song3(self):
+        self.sound_reset.play()    
+        self.sound_begin.stop()
+        self.sound_game.stop()
     
 class GalaxyApp(App):
     pass

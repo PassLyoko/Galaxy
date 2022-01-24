@@ -1,5 +1,41 @@
+#: import menu menu
 MainWidget:
 
 <MainWidget>:
+    canvas.before:
+        Rectangle:
+            size: self.size
+            source: "images/anime-anime-girls-digital-art-artwork-portrait-2D-1660179-wallhere.com.jpg"
+    menu_widget : menu_widget
     perspective_point_x: self.width/2
     perspective_point_y: self.height * 0.75
+    MenuWidget:
+        id: menu_widget
+    Label:
+        text: root.score_txt
+        font_size: dp(30)
+        font_name: "fonts/A new Heard Decorative.otf"
+        size_hint:.2, .2
+        pos_hint:{"x": 0, "top": 1}
+    Button:
+        text: "SONG 1"
+        size_hint: 0.1 , 0.05
+        pos_hint:{"x": 0, "bottom": 1 }
+        on_press: root.song1()
+        background_normal: ''
+        background_color: 1 , .3, .4, .7
+    Button:
+        text: "SONG 2"
+        size_hint: 0.1 , 0.05
+        pos_hint:{"x": 0.1 , "bottom": 1 }
+        on_press: root.song2()
+        background_normal: ''
+        background_color: 1 , .3, .4, .7
+    Button:
+        text: "SONG 3"
+        size_hint: 0.1 , 0.05
+        pos_hint:{"x": 0.2 , "bottom": 1 }
+        on_press: root.song3()
+        background_normal: ''
+        background_color: 1 , .3, .4, .7
+    
